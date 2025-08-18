@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mnemonic Verses</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f8f8f8;
+      --card:#ffffff;
+      --ink:#222;
+      --muted:#6f6f6f;
+      --line:#e9e9e9;
+      --accent:#F9E400;
+      --radius:16px;
+      --shadow:0 10px 30px rgba(0,0,0,.08);
+      --shadow-hover:0 14px 40px rgba(0,0,0,.12);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Roboto","Inter",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,"Helvetica Neue",Arial,sans-serif;
+      color:var(--ink);
+      -webkit-font-smoothing:antialiased;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    /* Subtle animated background that frames the card */
+    body::before, body::after {
+      content:"";
+      position:absolute; inset:0; z-index:-1;
+      background:
+        radial-gradient(circle at 20% 20%, #f9e40033 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, #4caf5033 0%, transparent 50%);
+      background-size:200% 200%;
+      animation: drift 25s ease-in-out infinite;
+    }
+    @keyframes drift {
+      0% { background-position: 0% 0%, 100% 100%; }
+      50%{ background-position: 100% 0%, 0% 100%; }
+      100%{ background-position: 0% 0%, 100% 100%; }
+    }
+
+    .wrap{ width:min(900px,100%); position:relative; z-index:1; }
+
+    /* Card */
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      padding:clamp(18px,4vw,28px);
+      overflow:visible;
+      backdrop-filter: blur(6px);
+    }
+    .card:hover{ box-shadow:var(--shadow-hover); border-color:#dedede; }
+
+    /* Verse block */
+    .verse{
+      font-family:"Roboto Mono", monospace;
+      white-space:pre-wrap;
+      font-size:clamp(16px,2.2vw,22px);
+      line-height:1.5;
+      margin:0 0 14px 0;
+      letter-spacing:.2px;
+    }
+    .source{ color:var(--muted); font-size:12px; margin:6px 0 12px 0; }
+
+    /* Tags */
+    .tags{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 12px 0; }
+    .tag{
+      font-size:11px; line-height:1;
+      padding:.45rem .6rem;
+      border-radius:999px;
+      border:1px solid #ddd;
+      background:#fafafa; color:#333;
+    }
+
+    /* Collapsible description */
+    details{
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fcfcfc;
+      padding:8px 12px;
+      transition: border-color .2s ease, background .2s ease;
+    }
+    details[open]{ background:#fffbe6; border-color:var(--accent); }
+    summary{
+      list-style:none; cursor:pointer; font-weight:600; font-size:13px;
+      display:flex; align-items:center; gap:8px; outline:none;
+    }
+    summary::-webkit-details-marker{display:none}
+    .chev{ width:16px; height:16px; display:inline-block; transform:rotate(0deg); transition:transform .15s ease; }
+    details[open] .chev{ transform:rotate(90deg); }
+    .desc{ margin:8px 0 4px 0; color:#333; font-size:14px; line-height:1.6; }
+
+    /* Count */
+    .meta{ display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:14px; }
+    .count{ font-size:12px; color:var(--muted); min-width:64px; text-align:right; }
+
+    /* Outside arrows */
+    .nav-btn{
+      position:absolute;
+      top:50%;
+      transform:translateY(-50%);
+      width:48px; height:48px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.6);
+      display:flex; align-items:center; justify-content:center;
+      backdrop-filter: blur(6px);
+      box-shadow:0 2px 8px rgba(0,0,0,.1);
+      cursor:pointer;
+      z-index:2;
+    }
+    .nav-btn svg{ width:20px; height:20px; }
+    .nav-btn.left{ left:-64px; }
+    .nav-btn.right{ right:-64px; }
+
+    /* Keyboard hint */
+    .kbd{ display:inline-flex; gap:6px; align-items:center; color:#777; font-size:12px; margin-top:10px; }
+    kbd{
+      border:1px solid #d6d6d6; border-bottom-width:2px;
+      border-radius:6px; padding:2px 6px; font-size:11px; background:#fff;
+      font-family:"Roboto Mono", monospace;
+    }
+    
+    /* --- ADDED: Style for the audio toggle button --- */
+    #audio-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      cursor: pointer;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      color: #333;
+    }
+    #audio-toggle:hover {
+      box-shadow: var(--shadow-hover);
+      border-color: #dedede;
+    }
+    /* --- END ADDED --- */
+
+    /* Mobile: allow scroll; pull arrows closer */
+    @media (max-width: 700px){
+      body{ display:block; padding:16px; overflow:auto; }
+      .wrap{ margin:16px auto; }
+      .nav-btn.left{ left:-16px; }
+      .nav-btn.right{ right:-16px; }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      body::before, body::after{ animation:none; }
+      .card, .chev{ transition:none; }
+    }
+  </style>
+</head>
+<body>
+  <audio id="background-audio" autoplay loop>
+    <source src="aphextwin.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+  <div class="wrap" role="application" aria-label="Mnemonic verses swiper">
+
+    <article class="card" aria-live="polite">
+      <div id="verse" class="verse"></div>
+      <div id="source" class="source"></div>
+      <div id="tags" class="tags" aria-label="Tags"></div>
+
+      <details id="details">
+        <summary><span class="chev">▶</span><span>Explain it to me</span></summary>
+        <div id="desc" class="desc"></div>
+      </details>
+
+      <div class="meta">
+        <div class="count" id="count"></div>
+      </div>
+      <div class="kbd" aria-hidden="true">
+        <span>Navigate</span><kbd>←</kbd><kbd>→</kbd> • <span>Expand</span> <kbd>Enter</kbd>
+      </div>
+    </article>
+
+    <div class="nav-btn left" title="Previous" role="button" aria-label="Previous">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="nav-btn right" title="Next" role="button" aria-label="Next">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+  </div>
+
+  <button id="audio-toggle" title="Toggle Music" aria-label="Toggle Music">🎵</button>
+  <script id="data" type="application/json">
+  [
+    {
+      "mnemonic_verse": "We overbuild when facts are thin,/nAdd belt and brace and call it win;/nBut surplus steel and wider frames,/nLock waste in walls and raise the claims.",
+      "description": "Caution with reclaimed components often leads to over-engineering. While this ensures safety, it drives inefficient material use, adding cost and undermining resource conservation goals.",
+      "source": "Building Confidence — June 2025 — Circular Buildings Coalition",
+      "tags": ["circularity", "reuse", "design", "risk"]
+    },
+    {
+      "mnemonic_verse": "A beam once strong now trims a door,/nEach step down value, less than before;/nWhen grade drops low to make reuse fit,/nWe save the part but squander its wit.",
+      "description": "Cascading reclaimed products into lower-value uses secures reuse but squanders much of their potential. This reduces efficiency compared to retaining them in equivalent-grade applications.",
+      "source": "Building Confidence — June 2025 — Circular Buildings Coalition",
+      "tags": ["reuse", "circularity", "design", "economics"]
+    },
+    {
+      "mnemonic_verse": "If every brick must tell its tale,/nWith scans and logs that seldom scale;/nThe proof we seek inflates the price,/nAnd stalls the will to reuse twice.",
+      "description": "High demands for traceability and performance proof reduce uncertainty but add significant cost and delay. This discourages adoption until better data systems mature.",
+      "source": "Building Confidence — June 2025 — Circular Buildings Coalition",
+      "tags": ["data", "risk", "reuse", "circularity"]
+    },
+    {
+      "mnemonic_verse": "A smokestack speaks of carbon cost,/nEach ton we burn, more futures lost;/nEfficiency first, then capture the rest,/nTo keep the climate at its best.",
+      "description": "Carbon emissions from construction remain a central threat. Prioritizing efficiency, low-carbon materials, and targeted carbon capture is key to aligning with climate goals.",
+      "source": "Four Circular Building Pathways — April 2024 — Circular Buildings Coalition",
+      "tags": ["carbon", "climate", "design", "policy"]
+    },
+    {
+      "mnemonic_verse": "Walls of wood grow back again,/nUnlike the stone or steel of men;/nBiobased beams, if managed right,/nCan store the carbon out of sight.",
+      "description": "Biobased materials such as timber offer renewable, carbon-storing alternatives to concrete or steel. Their climate benefit depends on sustainable forestry and careful life-cycle planning.",
+      "source": "Pathways to Biobased Construction — March 2023 — World Green Building Council",
+      "tags": ["biobased", "carbon", "circularity", "design"]
+    },
+    {
+      "mnemonic_verse": "Regulators set the tightening bar,/nThresholds climb both near and far;/nTomorrow’s law will shape today,/nTo build with less in every way.",
+      "description": "EU and city-level regulations are steadily introducing whole-life carbon thresholds and circularity criteria. These standards will drive rapid demand for secondary and low-carbon materials.",
+      "source": "EPBD Recast Report — January 2025 — European Commission",
+      "tags": ["regulation", "carbon", "policy", "circularity"]
+    },
+    {
+      "mnemonic_verse": "Insurance hides behind the veil,/nOf rules for new that sometimes fail;/nBut risk re-framed and trust aligned,/nCan open markets left behind.",
+      "description": "Insurance frameworks designed for new materials often exclude reused ones, creating uncertainty. Clearer underwriting, data, and tailored guarantees are essential to unlock reuse at scale.",
+      "source": "Building Confidence — June 2025 — Circular Buildings Coalition",
+      "tags": ["insurance", "risk", "reuse", "policy"]
+    },
+    {
+      "mnemonic_verse": "A healthy home is more than walls,/nIt filters air and light that calls;/nDesign with people at the heart,/nTo heal the body from the start.",
+      "description": "Health outcomes in buildings extend beyond carbon. Attention to indoor air, natural light, and low-toxin materials creates environments that support wellbeing alongside sustainability.",
+      "source": "Healthy Buildings Report — September 2022 — Harvard T.H. Chan School of Public Health",
+      "tags": ["health", "design", "policy"]
+    },
+    {
+      "mnemonic_verse": "Supply chains stretch and sometimes break,/nA fragile link is all it takes;/nLocal reuse and mapped demand,/nCan steady flows across the land.",
+      "description": "Construction supply chains remain fragile, especially for reused materials. Better visibility, forecasting, and localized harvesting strategies reduce risk and stabilize availability.",
+      "source": "Resilient Supply Chains in Construction — July 2024 — Arup",
+      "tags": ["supply chain", "reuse", "risk", "circularity"]
+    },
+    {
+      "mnemonic_verse": "Digital twins can show the past,/nA building’s data built to last;/nPassports track from birth to end,/nSo trust in reuse can ascend.",
+      "description": "Material passports and digital building records are critical enablers of circularity. They preserve provenance and performance data, allowing secondary products to be specified with confidence.",
+      "source": "Material Passports for Circular Economy — May 2023 — Ellen MacArthur Foundation",
+      "tags": ["digitalisation", "data", "reuse", "circularity"]
+    }
+  ]
+  </script>
+
+  <script>
+    const DATA = JSON.parse(document.getElementById('data').textContent.trim());
+    const verseEl = document.getElementById('verse');
+    const sourceEl = document.getElementById('source');
+    const tagsEl = document.getElementById('tags');
+    const descEl = document.getElementById('desc');
+    const detailsEl = document.getElementById('details');
+    const countEl = document.getElementById('count');
+    const navLeft = document.querySelector('.nav-btn.left');
+    const navRight = document.querySelector('.nav-btn.right');
+
+    let idx = 0;
+
+    function normalizeNewlines(text){
+      // turn both "\n" and "/n" sequences into real newlines
+      return String(text).replace(/\\n/g, "\n").replace(/\/n/g, "\n");
+    }
+
+    function render(i){
+      const item = DATA[i];
+      verseEl.textContent = normalizeNewlines(item.mnemonic_verse);
+      sourceEl.textContent = item.source;
+      descEl.textContent = item.description;
+      tagsEl.innerHTML = (item.tags||[]).map(t => `<span class="tag">${t}</span>`).join('');
+      detailsEl.open = false;
+      verseEl.focus({preventScroll:true});
+    }
+
+    function next(){ idx = (idx+1) % DATA.length; render(idx); }
+    function prev(){ idx = (idx-1+DATA.length) % DATA.length; render(idx); }
+
+    render(idx);
+
+    navLeft.addEventListener('click', prev);
+    navRight.addEventListener('click', next);
+
+    window.addEventListener('keydown', (e)=>{
+      if(e.key === 'ArrowRight'){ next(); }
+      else if(e.key === 'ArrowLeft'){ prev(); }
+      else if(e.key === 'Enter'){ detailsEl.open = !detailsEl.open; }
+    });
+
+    // Basic swipe that respects vertical scroll
+    let startX=null,startY=null,startTime=0;
+    window.addEventListener('touchstart', (e)=>{
+      const t=e.changedTouches[0];
+      startX=t.clientX; startY=t.clientY; startTime=Date.now();
+    },{passive:true});
+    window.addEventListener('touchend',(e)=>{
+      const t=e.changedTouches[0];
+      const dx=t.clientX-startX, dy=t.clientY-startY, dt=Date.now()-startTime;
+      if(Math.abs(dx)>40 && Math.abs(dy)<80 && dt<600){ if(dx<0) next(); else prev(); }
+    },{passive:true});
+
+    // --- ADDED: JavaScript for the audio toggle button ---
+    const audio = document.getElementById('background-audio');
+    const audioToggle = document.getElementById('audio-toggle');
+    let isPlaying = false;
+    audio.volume = 0.3; // Set a gentle volume (0.0 to 1.0)
+
+    audioToggle.addEventListener('click', () => {
+      if (isPlaying) {
+        audio.pause();
+        audioToggle.textContent = '🎵'; // Show play icon
+      } else {
+        // The play() method returns a Promise, which can cause an error if interrupted.
+        // We handle it gracefully here.
+        audio.play().catch(error => console.log("Audio play was interrupted."));
+        audioToggle.textContent = '⏸️'; // Show pause icon
+      }
+      isPlaying = !isPlaying;
+    });
+    // --- END ADDED ---
+  </script>
+</body>
+</html>
