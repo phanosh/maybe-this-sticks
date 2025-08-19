@@ -56,14 +56,15 @@
     .wrap{
       width:min(900px, 100%);
       max-width: 900px;
-      position:relative;
+      position:relative; /* needed for absolute-positioned arrows on desktop */
       z-index:1;
       margin:auto;
     }
 
     /* Card */
     .card{
-      width: clamp(320px, 92vw, 900px);
+      width: clamp(280px, 80vw, 600px); /* instead of 96vw */
+      margin: 0 auto;                  /* force centering horizontally */
       background:var(--card);
       border:1px solid var(--line);
       border-radius:var(--radius);
@@ -123,10 +124,9 @@
     details[open] .chev{ transform:rotate(90deg); }
     .desc{ margin:8px 0 4px 0; color:#333; font-size:clamp(13px, 1.6vw, 14px); line-height:1.6; }
 
-    /* Count */
+    /* Count + copy */
     .meta{ display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:14px; }
     .count{ font-size:12px; color:var(--muted); min-width:64px; text-align:right; }
-
 
     .copy-btn{
       font-size:12px; line-height:1;
@@ -137,7 +137,7 @@
     }
     .copy-btn:active{ transform: translateY(1px); }  
 
-    /* Outside arrows */
+    /* Arrows (desktop default: at sides) */
     .nav-btn{
       position:absolute;
       top:50%;
@@ -156,6 +156,16 @@
     .nav-btn svg{ width:20px; height:20px; }
     .nav-btn.left{ left:-64px; }
     .nav-btn.right{ right:-64px; }
+
+    /* Swipe hint */
+    .swipe-hint{
+      display:none; /* shown on mobile */
+      gap:8px; align-items:center; justify-content:center;
+      font-size:12px; color:#777; margin-top:6px;
+      user-select:none;
+      transition: opacity .3s ease;
+    }
+    .swipe-hint.hide{ opacity:0; pointer-events:none; }
 
     /* Keyboard hint */
     .kbd{ display:inline-flex; gap:6px; align-items:center; color:#777; font-size:12px; margin-top:10px; flex-wrap:wrap; }
@@ -229,14 +239,28 @@
 
     /* Mobile / small screens */
     @media (max-width: 700px){
-      .nav-btn.left{ left:-16px; }
-      .nav-btn.right{ right:-16px; }
+      /* stack content and place arrows below the card */
+      .wrap{ display:flex; flex-direction:column; align-items:center; }
+      .card{ 
+        width: 90vw; 
+        max-width: 500px;
+      }
+      /* turn side arrows into bottom buttons */
+      .nav-btn{
+        position: static;
+        transform:none;
+        width:56px; height:56px;
+        display:inline-flex;
+      }
+      .nav-btn svg{ width:24px; height:24px; }
+      .nav-row{ display:flex; gap:12px; margin-top:12px; }
+      .nav-btn.left, .nav-btn.right{ left:auto; right:auto; }
       #song-label{ right: 76px; top: 18px; }
-      .card{ width: 96vw; }
+      .swipe-hint{ display:flex; }
     }
 
-    /* Very small heights: keep nav buttons within view */
-    @media (max-height: 520px){
+    /* Very small heights: keep old absolute buttons within view (desktop only) */
+    @media (max-height: 520px) and (min-width: 701px){
       .nav-btn{ top:auto; bottom: -24px; transform:none; }
     }
 
@@ -265,22 +289,33 @@
 
       <div class="meta">
         <button id="copy-verse" class="copy-btn" type="button" title="Copy verse">Copy Verse</button>
-
         <div class="count" id="count"></div>
       </div>
+
       <div class="kbd" aria-hidden="true">
         <span>Navigate</span><kbd>←</kbd><kbd>→</kbd> • <span>Expand</span> <kbd>Enter</kbd>
       </div>
     </article>
 
-    <div class="nav-btn left" title="Previous" role="button" aria-label="Previous">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-        <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+    <!-- Arrows: on desktop they are positioned at sides; on mobile they flow below -->
+    <div class="nav-row">
+      <div class="nav-btn left" title="Previous" role="button" aria-label="Previous">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="nav-btn right" title="Next" role="button" aria-label="Next">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <path d="M9 6l6 6-6 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
     </div>
-    <div class="nav-btn right" title="Next" role="button" aria-label="Next">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-        <path d="M9 6l6 6-6 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Mobile-only hint (auto-hides after first interaction) -->
+    <div id="swipe-hint" class="swipe-hint" aria-hidden="true">
+      <span>Swipe for next</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 12h8M13 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
   </div>
@@ -307,7 +342,7 @@
   const navLeft = document.querySelector('.nav-btn.left');
   const navRight = document.querySelector('.nav-btn.right');
   const copyBtn = document.getElementById('copy-verse');
-
+  const swipeHint = document.getElementById('swipe-hint');
 
   let DATA = [];
   let idx = 0;
@@ -339,8 +374,12 @@
     countEl.textContent = `${i+1} / ${DATA.length}`;
   }
 
-  function next(){ idx = (idx+1) % DATA.length; render(idx); }
-  function prev(){ idx = (idx-1+DATA.length) % DATA.length; render(idx); }
+  function hideSwipeHint(){
+    swipeHint?.classList.add('hide');
+  }
+
+  function next(){ idx = (idx+1) % DATA.length; render(idx); hideSwipeHint(); }
+  function prev(){ idx = (idx-1+DATA.length) % DATA.length; render(idx); hideSwipeHint(); }
   navLeft.addEventListener('click', prev);
   navRight.addEventListener('click', next);
   window.addEventListener('keydown', (e)=>{
@@ -349,16 +388,28 @@
     else if(e.key === 'Enter'){ detailsEl.open = !detailsEl.open; }
   });
 
-  // swipe
-  let startX=null,startY=null,startTime=0;
+  // touch swipe (phones/tablets)
+  let startX=null,startY=null,startTime=0, moved=false;
   window.addEventListener('touchstart', (e)=>{
     const t=e.changedTouches[0];
-    startX=t.clientX; startY=t.clientY; startTime=Date.now();
+    startX=t.clientX; startY=t.clientY; startTime=Date.now(); moved=false;
+  },{passive:true});
+  window.addEventListener('touchmove', (e)=>{
+    // track movement to auto-hide hint on first horizontal intent
+    const t=e.changedTouches[0];
+    if(!t || startX===null) return;
+    const dx=t.clientX-startX, dy=t.clientY-startY;
+    if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10){ moved=true; hideSwipeHint(); }
   },{passive:true});
   window.addEventListener('touchend',(e)=>{
     const t=e.changedTouches[0];
+    if(!t) return;
     const dx=t.clientX-startX, dy=t.clientY-startY, dt=Date.now()-startTime;
-    if(Math.abs(dx)>40 && Math.abs(dy)<80 && dt<600){ if(dx<0) next(); else prev(); }
+    // horizontal, short gesture
+    if(Math.abs(dx)>40 && Math.abs(dy)<80 && dt<600){
+      if(dx<0) next(); else prev();
+    }
+    startX=startY=null; startTime=0;
   },{passive:true});
 
   // audio UI
@@ -385,6 +436,7 @@
   audio.addEventListener('ended', updateAudioUI);
   window.addEventListener('load', updateAudioUI);
 
+  // copy verse
   copyBtn.addEventListener('click', async () => {
     try{
       await navigator.clipboard.writeText(verseEl.textContent || '');
@@ -398,11 +450,9 @@
     }
   });
 
-
   // ---- robust loader for mnemonic.json ----
   async function loadData(){
     try {
-      // IMPORTANT: use a relative path and strip BOM/whitespace before JSON.parse
       const res = await fetch(`./mnemonic.json?v=${Date.now()}`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
 
@@ -417,14 +467,12 @@
       render(idx);
     } catch (err) {
       console.error('mnemonic.json load failed:', err);
-      // visible hint in UI
       verseEl.textContent = "No data available.";
       sourceEl.innerHTML =
         `<span style="color:#999;font-size:12px">Load error: ${err.message}</span>`;
       descEl.textContent = "";
       countEl.textContent = "0 / 0";
 
-      // minimal fallback so you can still test the UI
       DATA = [{
         mnemonic_verse: "Fallback item — your mnemonic.json failed to load.",
         description: "Check DevTools → Network for mnemonic.json status and make sure the JSON has no trailing commas.",
