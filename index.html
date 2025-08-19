@@ -127,6 +127,16 @@
     .meta{ display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:14px; }
     .count{ font-size:12px; color:var(--muted); min-width:64px; text-align:right; }
 
+
+    .copy-btn{
+      font-size:12px; line-height:1;
+      padding:.45rem .6rem;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#fff; cursor:pointer;
+    }
+    .copy-btn:active{ transform: translateY(1px); }  
+
     /* Outside arrows */
     .nav-btn{
       position:absolute;
@@ -254,6 +264,8 @@
       </details>
 
       <div class="meta">
+        <button id="copy-verse" class="copy-btn" type="button" title="Copy verse">Copy</button>
+
         <div class="count" id="count"></div>
       </div>
       <div class="kbd" aria-hidden="true">
@@ -294,6 +306,8 @@
   const countEl = document.getElementById('count');
   const navLeft = document.querySelector('.nav-btn.left');
   const navRight = document.querySelector('.nav-btn.right');
+  const copyBtn = document.getElementById('copy-verse');
+
 
   let DATA = [];
   let idx = 0;
@@ -370,6 +384,20 @@
   audio.addEventListener('pause', updateAudioUI);
   audio.addEventListener('ended', updateAudioUI);
   window.addEventListener('load', updateAudioUI);
+
+  copyBtn.addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText(verseEl.textContent || '');
+      const prev = copyBtn.textContent;
+      copyBtn.textContent = 'Copied';
+      setTimeout(()=> copyBtn.textContent = prev, 900);
+    }catch(e){
+      const prev = copyBtn.textContent;
+      copyBtn.textContent = 'Failed';
+      setTimeout(()=> copyBtn.textContent = prev, 1200);
+    }
+  });
+
 
   // ---- robust loader for mnemonic.json ----
   async function loadData(){
