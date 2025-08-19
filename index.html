@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mnemonic Verses</title>
+  <link rel="icon" href="favicon.png" type="image/x-icon">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -26,12 +27,14 @@
       font-family:"Roboto","Inter",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,"Helvetica Neue",Arial,sans-serif;
       color:var(--ink);
       -webkit-font-smoothing:antialiased;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+
+      /* Always center on all screens */
+      min-height:100svh; /* mobile-friendly viewport units */
+      display:grid;
+      place-items:center;
       padding:24px;
       position:relative;
-      overflow:hidden;
+      overflow:auto; /* allow scroll if content exceeds viewport */
     }
 
     /* Subtle animated background that frames the card */
@@ -50,10 +53,17 @@
       100%{ background-position: 0% 0%, 100% 100%; }
     }
 
-    .wrap{ width:min(900px,100%); position:relative; z-index:1; }
+    .wrap{
+      width:min(900px, 100%);
+      max-width: 900px;
+      position:relative;
+      z-index:1;
+      margin:auto;
+    }
 
     /* Card */
     .card{
+      width: clamp(320px, 92vw, 900px);
       background:var(--card);
       border:1px solid var(--line);
       border-radius:var(--radius);
@@ -74,7 +84,16 @@
       margin:0 0 14px 0;
       letter-spacing:.2px;
     }
-    .source{ color:var(--muted); font-size:12px; margin:6px 0 12px 0; }
+    .source{
+      color:var(--muted);
+      font-size:12px;
+      margin:6px 0 12px 0;
+      word-break: break-word;
+    }
+    .source a{
+      color:inherit;
+      text-decoration: underline;
+    }
 
     /* Tags */
     .tags{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 12px 0; }
@@ -102,7 +121,7 @@
     summary::-webkit-details-marker{display:none}
     .chev{ width:16px; height:16px; display:inline-block; transform:rotate(0deg); transition:transform .15s ease; }
     details[open] .chev{ transform:rotate(90deg); }
-    .desc{ margin:8px 0 4px 0; color:#333; font-size:14px; line-height:1.6; }
+    .desc{ margin:8px 0 4px 0; color:#333; font-size:clamp(13px, 1.6vw, 14px); line-height:1.6; }
 
     /* Count */
     .meta{ display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top:14px; }
@@ -121,13 +140,15 @@
       box-shadow:0 2px 8px rgba(0,0,0,.1);
       cursor:pointer;
       z-index:2;
+      border:1px solid var(--line);
+      -webkit-tap-highlight-color: transparent;
     }
     .nav-btn svg{ width:20px; height:20px; }
     .nav-btn.left{ left:-64px; }
     .nav-btn.right{ right:-64px; }
 
     /* Keyboard hint */
-    .kbd{ display:inline-flex; gap:6px; align-items:center; color:#777; font-size:12px; margin-top:10px; }
+    .kbd{ display:inline-flex; gap:6px; align-items:center; color:#777; font-size:12px; margin-top:10px; flex-wrap:wrap; }
     kbd{
       border:1px solid #d6d6d6; border-bottom-width:2px;
       border-radius:6px; padding:2px 6px; font-size:11px; background:#fff;
@@ -178,6 +199,7 @@
       transform: translateY(-6px);
       transition: opacity .2s ease, transform .2s ease;
       pointer-events: none;
+      white-space: nowrap;
     }
     #song-label.show{ opacity:1; transform: translateY(0); }
 
@@ -195,13 +217,17 @@
       text-decoration: underline;
     }
 
-    /* Mobile */
+    /* Mobile / small screens */
     @media (max-width: 700px){
-      body{ display:block; padding:16px; overflow:auto; }
-      .wrap{ margin:16px auto; }
       .nav-btn.left{ left:-16px; }
       .nav-btn.right{ right:-16px; }
       #song-label{ right: 76px; top: 18px; }
+      .card{ width: 96vw; }
+    }
+
+    /* Very small heights: keep nav buttons within view */
+    @media (max-height: 520px){
+      .nav-btn{ top:auto; bottom: -24px; transform:none; }
     }
 
     @media (prefers-reduced-motion: reduce){
@@ -217,7 +243,6 @@
   </audio>
 
   <div class="wrap" role="application" aria-label="Mnemonic verses swiper">
-
     <article class="card" aria-live="polite">
       <div id="verse" class="verse"></div>
       <div id="source" class="source"></div>
@@ -246,7 +271,6 @@
         <path d="M9 6l6 6-6 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-
   </div>
 
   <!-- Song name label (shown while playing) -->
@@ -260,73 +284,8 @@
     Made by <a href="https://phanosha.com" target="_blank" rel="noopener">Phanos Ha</a>
   </div>
 
-  <script id="data" type="application/json">
-  [
-    {
-      "mnemonic_verse": "We overbuild when facts are thin,/nAdd belt and brace and call it win;/nBut surplus steel and wider frames,/nLock waste in walls and raise the claims.",
-      "description": "Caution with reclaimed components often leads to over-engineering. While this ensures safety, it drives inefficient material use, adding cost and undermining resource conservation goals.",
-      "source": "Building Confidence — June 2025 — Circular Buildings Coalition",
-      "tags": ["circularity", "reuse", "design", "risk"]
-    },
-    {
-      "mnemonic_verse": "A beam once strong now trims a door,/nEach step down value, less than before;/nWhen grade drops low to make reuse fit,/nWe save the part but squander its wit.",
-      "description": "Cascading reclaimed products into lower-value uses secures reuse but squanders much of their potential. This reduces efficiency compared to retaining them in equivalent-grade applications.",
-      "source": "Building Confidence — June 2025 — Circular Buildings Coalition",
-      "tags": ["reuse", "circularity", "design", "economics"]
-    },
-    {
-      "mnemonic_verse": "If every brick must tell its tale,/nWith scans and logs that seldom scale;/nThe proof we seek inflates the price,/nAnd stalls the will to reuse twice.",
-      "description": "High demands for traceability and performance proof reduce uncertainty but add significant cost and delay. This discourages adoption until better data systems mature.",
-      "source": "Building Confidence — June 2025 — Circular Buildings Coalition",
-      "tags": ["data", "risk", "reuse", "circularity"]
-    },
-    {
-      "mnemonic_verse": "A smokestack speaks of carbon cost,/nEach ton we burn, more futures lost;/nEfficiency first, then capture the rest,/nTo keep the climate at its best.",
-      "description": "Carbon emissions from construction remain a central threat. Prioritizing efficiency, low-carbon materials, and targeted carbon capture is key to aligning with climate goals.",
-      "source": "Four Circular Building Pathways — April 2024 — Circular Buildings Coalition",
-      "tags": ["carbon", "climate", "design", "policy"]
-    },
-    {
-      "mnemonic_verse": "Walls of wood grow back again,/nUnlike the stone or steel of men;/nBiobased beams, if managed right,/nCan store the carbon out of sight.",
-      "description": "Biobased materials such as timber offer renewable, carbon-storing alternatives to concrete or steel. Their climate benefit depends on sustainable forestry and careful life-cycle planning.",
-      "source": "Pathways to Biobased Construction — March 2023 — World Green Building Council",
-      "tags": ["biobased", "carbon", "circularity", "design"]
-    },
-    {
-      "mnemonic_verse": "Regulators set the tightening bar,/nThresholds climb both near and far;/nTomorrow’s law will shape today,/nTo build with less in every way.",
-      "description": "EU and city-level regulations are steadily introducing whole-life carbon thresholds and circularity criteria. These standards will drive rapid demand for secondary and low-carbon materials.",
-      "source": "EPBD Recast Report — January 2025 — European Commission",
-      "tags": ["regulation", "carbon", "policy", "circularity"]
-    },
-    {
-      "mnemonic_verse": "Insurance hides behind the veil,/nOf rules for new that sometimes fail;/nBut risk re-framed and trust aligned,/nCan open markets left behind.",
-      "description": "Insurance frameworks designed for new materials often exclude reused ones, creating uncertainty. Clearer underwriting, data, and tailored guarantees are essential to unlock reuse at scale.",
-      "source": "Building Confidence — June 2025 — Circular Buildings Coalition",
-      "tags": ["insurance", "risk", "reuse", "policy"]
-    },
-    {
-      "mnemonic_verse": "A healthy home is more than walls,/nIt filters air and light that calls;/nDesign with people at the heart,/nTo heal the body from the start.",
-      "description": "Health outcomes in buildings extend beyond carbon. Attention to indoor air, natural light, and low-toxin materials creates environments that support wellbeing alongside sustainability.",
-      "source": "Healthy Buildings Report — September 2022 — Harvard T.H. Chan School of Public Health",
-      "tags": ["health", "design", "policy"]
-    },
-    {
-      "mnemonic_verse": "Supply chains stretch and sometimes break,/nA fragile link is all it takes;/nLocal reuse and mapped demand,/nCan steady flows across the land.",
-      "description": "Construction supply chains remain fragile, especially for reused materials. Better visibility, forecasting, and localized harvesting strategies reduce risk and stabilize availability.",
-      "source": "Resilient Supply Chains in Construction — July 2024 — Arup",
-      "tags": ["supply chain", "reuse", "risk", "circularity"]
-    },
-    {
-      "mnemonic_verse": "Digital twins can show the past,/nA building’s data built to last;/nPassports track from birth to end,/nSo trust in reuse can ascend.",
-      "description": "Material passports and digital building records are critical enablers of circularity. They preserve provenance and performance data, allowing secondary products to be specified with confidence.",
-      "source": "Material Passports for Circular Economy — May 2023 — Ellen MacArthur Foundation",
-      "tags": ["digitalisation", "data", "reuse", "circularity"]
-    }
-  ]
-  </script>
-
-  <script>
-    const DATA = JSON.parse(document.getElementById('data').textContent.trim());
+  <!-- App logic: load JSON from mnemonic.json -->
+  <script type="module">
     const verseEl = document.getElementById('verse');
     const sourceEl = document.getElementById('source');
     const tagsEl = document.getElementById('tags');
@@ -336,32 +295,44 @@
     const navLeft = document.querySelector('.nav-btn.left');
     const navRight = document.querySelector('.nav-btn.right');
 
+    let DATA = [];
     let idx = 0;
 
-    function normalizeNewlines(text){
-      // turn both "\n" and "/n" sequences into real newlines
-      return String(text).replace(/\\n/g, "\n").replace(/\/n/g, "\n");
+    const normalizeNewlines = (text) =>
+      String(text ?? "").replace(/\\n/g, "\n").replace(/\/n/g, "\n");
+
+    function setSource(node, label, url){
+      node.innerHTML = "";
+      if (url){
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.textContent = label ?? url;
+        node.appendChild(a);
+      } else {
+        node.textContent = label ?? "";
+      }
     }
 
     function render(i){
-      const item = DATA[i];
+      if (!DATA.length) return;
+      const item = DATA[i] ?? {};
       verseEl.textContent = normalizeNewlines(item.mnemonic_verse);
-      sourceEl.textContent = item.source;
-      descEl.textContent = item.description;
-      tagsEl.innerHTML = (item.tags||[]).map(t => `<span class="tag">${t}</span>`).join('');
+      setSource(sourceEl, item.source, item.source_url);
+      descEl.textContent = item.description ?? "";
+      tagsEl.innerHTML = (item.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
       detailsEl.open = false;
-      verseEl.focus({preventScroll:true});
+      verseEl.focus?.({preventScroll:true});
       countEl.textContent = `${i+1} / ${DATA.length}`;
     }
 
     function next(){ idx = (idx+1) % DATA.length; render(idx); }
     function prev(){ idx = (idx-1+DATA.length) % DATA.length; render(idx); }
 
-    render(idx);
-
+    // Navigation
     navLeft.addEventListener('click', prev);
     navRight.addEventListener('click', next);
-
     window.addEventListener('keydown', (e)=>{
       if(e.key === 'ArrowRight'){ next(); }
       else if(e.key === 'ArrowLeft'){ prev(); }
@@ -384,30 +355,53 @@
     const audio = document.getElementById('background-audio');
     const audioToggle = document.getElementById('audio-toggle');
     const songLabel = document.getElementById('song-label');
-    let isPlaying = false;
-    audio.volume = 0.3; // gentle volume
 
     function updateAudioUI(){
-      isPlaying = !audio.paused && !audio.ended;
+      const isPlaying = !audio.paused && !audio.ended;
       audioToggle.textContent = isPlaying ? '🔈' : '🔇';
       songLabel.classList.toggle('show', isPlaying);
       songLabel.setAttribute('aria-hidden', isPlaying ? 'false' : 'true');
     }
 
+    audio.volume = 0.3;
     audioToggle.addEventListener('click', () => {
       if (audio.paused || audio.ended) {
         audio.play().catch(()=>{ /* ignore autoplay block until user gesture */ });
       } else {
         audio.pause();
       }
-      // Let the state settle, then sync UI
       setTimeout(updateAudioUI, 0);
     });
-
     audio.addEventListener('play', updateAudioUI);
     audio.addEventListener('pause', updateAudioUI);
     audio.addEventListener('ended', updateAudioUI);
     window.addEventListener('load', updateAudioUI);
+
+    // Load JSON externally (with cache-bust and clear errors)
+    (async function loadData(){
+      const url = new URL('mnemonic.json', window.location.href);
+      try {
+        const res = await fetch(`${url}?v=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        const text = await res.text();
+        try {
+          DATA = JSON.parse(text);
+          if (!Array.isArray(DATA)) throw new Error('JSON root is not an array');
+        } catch (e) {
+          throw new Error(`Invalid JSON: ${e.message}`);
+        }
+      } catch (err) {
+        console.error('Failed to load mnemonic.json:', err);
+        verseEl.textContent = "No data available.";
+        sourceEl.innerHTML = `<span style="color:#999;font-size:12px">Load error: ${err.message}</span>`;
+        descEl.textContent = "";
+        countEl.textContent = "0 / 0";
+        return;
+      }
+      idx = 0;
+      render(idx);
+    })();
+
   </script>
 </body>
 </html>
