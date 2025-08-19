@@ -134,7 +134,7 @@
       font-family:"Roboto Mono", monospace;
     }
     
-    /* --- ADDED: Style for the audio toggle button --- */
+    /* Audio toggle button */
     #audio-toggle {
       position: fixed;
       top: 20px;
@@ -159,14 +159,49 @@
       box-shadow: var(--shadow-hover);
       border-color: #dedede;
     }
-    /* --- END ADDED --- */
 
-    /* Mobile: allow scroll; pull arrows closer */
+    /* Song label (appears only while playing) */
+    #song-label{
+      position: fixed;
+      top: 24px;
+      right: 84px; /* sits left of the toggle */
+      z-index: 999;
+      padding: 6px 10px;
+      font-size: 13px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.6);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity .2s ease, transform .2s ease;
+      pointer-events: none;
+    }
+    #song-label.show{ opacity:1; transform: translateY(0); }
+
+    /* Footer credit */
+    .credit{
+      position: fixed;
+      right: 16px;
+      bottom: 10px;
+      font-size: 11px;
+      color: var(--muted);
+      z-index: 1000;
+    }
+    .credit a{
+      color: inherit;
+      text-decoration: underline;
+    }
+
+    /* Mobile */
     @media (max-width: 700px){
       body{ display:block; padding:16px; overflow:auto; }
       .wrap{ margin:16px auto; }
       .nav-btn.left{ left:-16px; }
       .nav-btn.right{ right:-16px; }
+      #song-label{ right: 76px; top: 18px; }
     }
 
     @media (prefers-reduced-motion: reduce){
@@ -180,6 +215,7 @@
     <source src="aphextwin.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
+
   <div class="wrap" role="application" aria-label="Mnemonic verses swiper">
 
     <article class="card" aria-live="polite">
@@ -213,7 +249,17 @@
 
   </div>
 
+  <!-- Song name label (shown while playing) -->
+  <div id="song-label" aria-live="polite" aria-hidden="true">Aphex Twin — Stone in Focus</div>
+
+  <!-- Audio toggle -->
   <button id="audio-toggle" title="Toggle Music" aria-label="Toggle Music">🎵</button>
+
+  <!-- Footer credit -->
+  <div class="credit">
+    Made by <a href="https://phanosha.com" target="_blank" rel="noopener">Phanos Ha</a>
+  </div>
+
   <script id="data" type="application/json">
   [
     {
@@ -305,6 +351,7 @@
       tagsEl.innerHTML = (item.tags||[]).map(t => `<span class="tag">${t}</span>`).join('');
       detailsEl.open = false;
       verseEl.focus({preventScroll:true});
+      countEl.textContent = `${i+1} / ${DATA.length}`;
     }
 
     function next(){ idx = (idx+1) % DATA.length; render(idx); }
@@ -333,25 +380,34 @@
       if(Math.abs(dx)>40 && Math.abs(dy)<80 && dt<600){ if(dx<0) next(); else prev(); }
     },{passive:true});
 
-    // --- ADDED: JavaScript for the audio toggle button ---
+    // Audio controls + song label
     const audio = document.getElementById('background-audio');
     const audioToggle = document.getElementById('audio-toggle');
+    const songLabel = document.getElementById('song-label');
     let isPlaying = false;
-    audio.volume = 0.3; // Set a gentle volume (0.0 to 1.0)
+    audio.volume = 0.3; // gentle volume
+
+    function updateAudioUI(){
+      isPlaying = !audio.paused && !audio.ended;
+      audioToggle.textContent = isPlaying ? '🔈' : '🔇';
+      songLabel.classList.toggle('show', isPlaying);
+      songLabel.setAttribute('aria-hidden', isPlaying ? 'false' : 'true');
+    }
 
     audioToggle.addEventListener('click', () => {
-      if (isPlaying) {
-        audio.pause();
-        audioToggle.textContent = '🎵'; // Show play icon
+      if (audio.paused || audio.ended) {
+        audio.play().catch(()=>{ /* ignore autoplay block until user gesture */ });
       } else {
-        // The play() method returns a Promise, which can cause an error if interrupted.
-        // We handle it gracefully here.
-        audio.play().catch(error => console.log("Audio play was interrupted."));
-        audioToggle.textContent = '⏸️'; // Show pause icon
+        audio.pause();
       }
-      isPlaying = !isPlaying;
+      // Let the state settle, then sync UI
+      setTimeout(updateAudioUI, 0);
     });
-    // --- END ADDED ---
+
+    audio.addEventListener('play', updateAudioUI);
+    audio.addEventListener('pause', updateAudioUI);
+    audio.addEventListener('ended', updateAudioUI);
+    window.addEventListener('load', updateAudioUI);
   </script>
 </body>
 </html>
