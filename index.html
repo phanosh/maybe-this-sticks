@@ -286,122 +286,131 @@
 
   <!-- App logic: load JSON from mnemonic.json -->
   <script type="module">
-    const verseEl = document.getElementById('verse');
-    const sourceEl = document.getElementById('source');
-    const tagsEl = document.getElementById('tags');
-    const descEl = document.getElementById('desc');
-    const detailsEl = document.getElementById('details');
-    const countEl = document.getElementById('count');
-    const navLeft = document.querySelector('.nav-btn.left');
-    const navRight = document.querySelector('.nav-btn.right');
+  const verseEl = document.getElementById('verse');
+  const sourceEl = document.getElementById('source');
+  const tagsEl = document.getElementById('tags');
+  const descEl = document.getElementById('desc');
+  const detailsEl = document.getElementById('details');
+  const countEl = document.getElementById('count');
+  const navLeft = document.querySelector('.nav-btn.left');
+  const navRight = document.querySelector('.nav-btn.right');
 
-    let DATA = [];
-    let idx = 0;
+  let DATA = [];
+  let idx = 0;
 
-    const normalizeNewlines = (text) =>
-      String(text ?? "").replace(/\\n/g, "\n").replace(/\/n/g, "\n");
+  const normalizeNewlines = (text) =>
+    String(text ?? "").replace(/\\n/g, "\n").replace(/\/n/g, "\n");
 
-    function setSource(node, label, url){
-      node.innerHTML = "";
-      if (url){
-        const a = document.createElement('a');
-        a.href = url;
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        a.textContent = label ?? url;
-        node.appendChild(a);
-      } else {
-        node.textContent = label ?? "";
-      }
+  function setSource(node, label, url){
+    node.innerHTML = "";
+    if (url){
+      const a = document.createElement('a');
+      a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+      a.textContent = label ?? url;
+      node.appendChild(a);
+    } else {
+      node.textContent = label ?? "";
     }
+  }
 
-    function render(i){
-      if (!DATA.length) return;
-      const item = DATA[i] ?? {};
-      verseEl.textContent = normalizeNewlines(item.mnemonic_verse);
-      setSource(sourceEl, item.source, item.source_url);
-      descEl.textContent = item.description ?? "";
-      tagsEl.innerHTML = (item.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
-      detailsEl.open = false;
-      verseEl.focus?.({preventScroll:true});
-      countEl.textContent = `${i+1} / ${DATA.length}`;
+  function render(i){
+    if (!DATA.length) return;
+    const item = DATA[i] ?? {};
+    verseEl.textContent = normalizeNewlines(item.mnemonic_verse);
+    setSource(sourceEl, item.source, item.source_url);
+    descEl.textContent = item.description ?? "";
+    tagsEl.innerHTML = (item.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
+    detailsEl.open = false;
+    verseEl.focus?.({preventScroll:true});
+    countEl.textContent = `${i+1} / ${DATA.length}`;
+  }
+
+  function next(){ idx = (idx+1) % DATA.length; render(idx); }
+  function prev(){ idx = (idx-1+DATA.length) % DATA.length; render(idx); }
+  navLeft.addEventListener('click', prev);
+  navRight.addEventListener('click', next);
+  window.addEventListener('keydown', (e)=>{
+    if(e.key === 'ArrowRight'){ next(); }
+    else if(e.key === 'ArrowLeft'){ prev(); }
+    else if(e.key === 'Enter'){ detailsEl.open = !detailsEl.open; }
+  });
+
+  // swipe
+  let startX=null,startY=null,startTime=0;
+  window.addEventListener('touchstart', (e)=>{
+    const t=e.changedTouches[0];
+    startX=t.clientX; startY=t.clientY; startTime=Date.now();
+  },{passive:true});
+  window.addEventListener('touchend',(e)=>{
+    const t=e.changedTouches[0];
+    const dx=t.clientX-startX, dy=t.clientY-startY, dt=Date.now()-startTime;
+    if(Math.abs(dx)>40 && Math.abs(dy)<80 && dt<600){ if(dx<0) next(); else prev(); }
+  },{passive:true});
+
+  // audio UI
+  const audio = document.getElementById('background-audio');
+  const audioToggle = document.getElementById('audio-toggle');
+  const songLabel = document.getElementById('song-label');
+  function updateAudioUI(){
+    const isPlaying = !audio.paused && !audio.ended;
+    audioToggle.textContent = isPlaying ? '🔈' : '🔇';
+    songLabel.classList.toggle('show', isPlaying);
+    songLabel.setAttribute('aria-hidden', isPlaying ? 'false' : 'true');
+  }
+  audio.volume = 0.3;
+  audioToggle.addEventListener('click', () => {
+    if (audio.paused || audio.ended) {
+      audio.play().catch(()=>{});
+    } else {
+      audio.pause();
     }
+    setTimeout(updateAudioUI, 0);
+  });
+  audio.addEventListener('play', updateAudioUI);
+  audio.addEventListener('pause', updateAudioUI);
+  audio.addEventListener('ended', updateAudioUI);
+  window.addEventListener('load', updateAudioUI);
 
-    function next(){ idx = (idx+1) % DATA.length; render(idx); }
-    function prev(){ idx = (idx-1+DATA.length) % DATA.length; render(idx); }
+  // ---- robust loader for mnemonic.json ----
+  async function loadData(){
+    try {
+      // IMPORTANT: use a relative path and strip BOM/whitespace before JSON.parse
+      const res = await fetch(`./mnemonic.json?v=${Date.now()}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
 
-    // Navigation
-    navLeft.addEventListener('click', prev);
-    navRight.addEventListener('click', next);
-    window.addEventListener('keydown', (e)=>{
-      if(e.key === 'ArrowRight'){ next(); }
-      else if(e.key === 'ArrowLeft'){ prev(); }
-      else if(e.key === 'Enter'){ detailsEl.open = !detailsEl.open; }
-    });
+      let text = await res.text();
+      text = text.replace(/^\uFEFF/, '').trim(); // remove BOM + leading ws
 
-    // Basic swipe that respects vertical scroll
-    let startX=null,startY=null,startTime=0;
-    window.addEventListener('touchstart', (e)=>{
-      const t=e.changedTouches[0];
-      startX=t.clientX; startY=t.clientY; startTime=Date.now();
-    },{passive:true});
-    window.addEventListener('touchend',(e)=>{
-      const t=e.changedTouches[0];
-      const dx=t.clientX-startX, dy=t.clientY-startY, dt=Date.now()-startTime;
-      if(Math.abs(dx)>40 && Math.abs(dy)<80 && dt<600){ if(dx<0) next(); else prev(); }
-    },{passive:true});
+      const parsed = JSON.parse(text);
+      if (!Array.isArray(parsed)) throw new Error('JSON root is not an array');
 
-    // Audio controls + song label
-    const audio = document.getElementById('background-audio');
-    const audioToggle = document.getElementById('audio-toggle');
-    const songLabel = document.getElementById('song-label');
-
-    function updateAudioUI(){
-      const isPlaying = !audio.paused && !audio.ended;
-      audioToggle.textContent = isPlaying ? '🔈' : '🔇';
-      songLabel.classList.toggle('show', isPlaying);
-      songLabel.setAttribute('aria-hidden', isPlaying ? 'false' : 'true');
-    }
-
-    audio.volume = 0.3;
-    audioToggle.addEventListener('click', () => {
-      if (audio.paused || audio.ended) {
-        audio.play().catch(()=>{ /* ignore autoplay block until user gesture */ });
-      } else {
-        audio.pause();
-      }
-      setTimeout(updateAudioUI, 0);
-    });
-    audio.addEventListener('play', updateAudioUI);
-    audio.addEventListener('pause', updateAudioUI);
-    audio.addEventListener('ended', updateAudioUI);
-    window.addEventListener('load', updateAudioUI);
-
-    // Load JSON externally (with cache-bust and clear errors)
-    (async function loadData(){
-      const url = new URL('mnemonic.json', window.location.href);
-      try {
-        const res = await fetch(`${url}?v=${Date.now()}`, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-        const text = await res.text();
-        try {
-          DATA = JSON.parse(text);
-          if (!Array.isArray(DATA)) throw new Error('JSON root is not an array');
-        } catch (e) {
-          throw new Error(`Invalid JSON: ${e.message}`);
-        }
-      } catch (err) {
-        console.error('Failed to load mnemonic.json:', err);
-        verseEl.textContent = "No data available.";
-        sourceEl.innerHTML = `<span style="color:#999;font-size:12px">Load error: ${err.message}</span>`;
-        descEl.textContent = "";
-        countEl.textContent = "0 / 0";
-        return;
-      }
+      DATA = parsed;
       idx = 0;
       render(idx);
-    })();
+    } catch (err) {
+      console.error('mnemonic.json load failed:', err);
+      // visible hint in UI
+      verseEl.textContent = "No data available.";
+      sourceEl.innerHTML =
+        `<span style="color:#999;font-size:12px">Load error: ${err.message}</span>`;
+      descEl.textContent = "";
+      countEl.textContent = "0 / 0";
 
-  </script>
+      // minimal fallback so you can still test the UI
+      DATA = [{
+        mnemonic_verse: "Fallback item — your mnemonic.json failed to load.",
+        description: "Check DevTools → Network for mnemonic.json status and make sure the JSON has no trailing commas.",
+        source: "Local fallback",
+        source_url: null,
+        tags: ["debug"]
+      }];
+      idx = 0;
+      render(idx);
+    }
+  }
+  loadData();
+</script>
+
+
 </body>
 </html>
