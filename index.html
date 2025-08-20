@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mnemonic Verses</title>
+  <title>Maybe this sticks</title>
   <link rel="icon" href="favicon.png" type="image/x-icon">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -64,7 +64,7 @@
     /* Card */
     .card{
       width: clamp(280px, 80vw, 600px); /* instead of 96vw */
-      margin: 0 auto;                  /* force centering horizontally */
+      margin: 0 auto;              /* force centering horizontally */
       background:var(--card);
       border:1px solid var(--line);
       border-radius:var(--radius);
@@ -175,6 +175,33 @@
       font-family:"Roboto Mono", monospace;
     }
     
+    /* "What is this?" Button */
+    #about-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      cursor: pointer;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+      font-size: 24px;
+      font-family: "Roboto Mono", monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      color: #333;
+    }
+    #about-btn:hover {
+      box-shadow: var(--shadow-hover);
+      border-color: #dedede;
+    }
+
     /* Audio toggle button */
     #audio-toggle {
       position: fixed;
@@ -236,13 +263,67 @@
       color: inherit;
       text-decoration: underline;
     }
+    
+    /* ---- Modal Styles START ---- */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        display: none; /* Hidden by default */
+        align-items: center;
+        justify-content: center;
+        z-index: 2000; /* Above everything else */
+        padding: 24px;
+    }
+    .modal-overlay.show {
+        display: flex; /* Show it */
+    }
+    .modal-content {
+        background: var(--card);
+        padding: 28px;
+        padding-top: 40px; /* Extra padding for close button */
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-hover);
+        width: min(500px, 90vw);
+        position: relative;
+        font-size: 15px;
+        line-height: 1.6;
+        font-family: "Roboto Mono", monospace; /* Add this line */
+    }
+    .modal-content p {
+      margin: 0 0 1em 0;
+    }
+    .modal-content p:last-child {
+      margin-bottom: 0;
+    }
+    .modal-content a {
+      color: inherit;
+      text-decoration: underline;
+    }
+    .modal-close {
+        position: absolute;
+        top: 10px;
+        right: 14px;
+        background: none;
+        border: none;
+        font-size: 28px;
+        cursor: pointer;
+        color: var(--muted);
+        line-height: 1;
+        padding: 0;
+    }
+    /* ---- Modal Styles END ---- */
 
     /* Mobile / small screens */
     @media (max-width: 700px){
       /* stack content and place arrows below the card */
       .wrap{ display:flex; flex-direction:column; align-items:center; }
-      .card{ 
-        width: 90vw; 
+      .card{  
+        width: 90vw;  
         max-width: 500px;
       }
       /* turn side arrows into bottom buttons */
@@ -257,6 +338,8 @@
       .nav-btn.left, .nav-btn.right{ left:auto; right:auto; }
       #song-label{ right: 76px; top: 18px; }
       .swipe-hint{ display:flex; }
+      #about-btn { top: 12px; left: 12px; }
+      #audio-toggle { top: 12px; right: 12px; }
     }
 
     /* Very small heights: keep old absolute buttons within view (desktop only) */
@@ -271,6 +354,9 @@
   </style>
 </head>
 <body>
+
+  <button id="about-btn" title="What is this?">?</button>
+
   <audio id="background-audio" autoplay loop>
     <source src="aphextwin.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
@@ -297,7 +383,6 @@
       </div>
     </article>
 
-    <!-- Arrows: on desktop they are positioned at sides; on mobile they flow below -->
     <div class="nav-row">
       <div class="nav-btn left" title="Previous" role="button" aria-label="Previous">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
@@ -311,7 +396,6 @@
       </div>
     </div>
 
-    <!-- Mobile-only hint (auto-hides after first interaction) -->
     <div id="swipe-hint" class="swipe-hint" aria-hidden="true">
       <span>Swipe for next</span>
       <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
@@ -320,18 +404,25 @@
     </div>
   </div>
 
-  <!-- Song name label (shown while playing) -->
   <div id="song-label" aria-live="polite" aria-hidden="true">Aphex Twin — Stone in Focus</div>
 
-  <!-- Audio toggle -->
   <button id="audio-toggle" title="Toggle Music" aria-label="Toggle Music">🎵</button>
 
-  <!-- Footer credit -->
   <div class="credit">
     Made by <a href="https://phanosha.com" target="_blank" rel="noopener">Phanos Ha</a>
   </div>
 
-  <!-- App logic: load JSON from mnemonic.json -->
+  <div id="about-modal" class="modal-overlay">
+      <div class="modal-content">
+          <button class="modal-close" title="Close">&times;</button>
+          <p>We’re drowning in updates and reports, but little of it turns into memory. This project creates a small pause: one idea at a time, in verse; slow enough to sit with, simple enough to carry, and pointed enough to nudge how we act.</p>
+          <p>It was put together by gathering 15 major papers on climate and the built environment and, with help from LLMs, distilled their lessons into short mnemonic verses. Each verse links back to its source for context. Treat them as prompts, not conclusions.</p>
+          <p>Copy, share, and use them freely.</p>
+          <br>
+          <p>Made by <a href="https://phanosha.com" target="_blank" rel="noopener">Phanos Ha</a></p>
+      </div>
+  </div>
+
   <script type="module">
   const verseEl = document.getElementById('verse');
   const sourceEl = document.getElementById('source');
@@ -450,6 +541,35 @@
     }
   });
 
+  // ---- Modal Logic START ----
+  const aboutBtn = document.getElementById('about-btn');
+  const aboutModal = document.getElementById('about-modal');
+  const modalCloseBtn = aboutModal.querySelector('.modal-close');
+
+  function showModal() {
+      aboutModal.classList.add('show');
+  }
+
+  function hideModal() {
+      aboutModal.classList.remove('show');
+  }
+
+  aboutBtn.addEventListener('click', showModal);
+  modalCloseBtn.addEventListener('click', hideModal);
+  aboutModal.addEventListener('click', (event) => {
+      // Close if the click is on the overlay itself, not the content
+      if (event.target === aboutModal) {
+          hideModal();
+      }
+  });
+  // Also close with the Escape key
+  window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && aboutModal.classList.contains('show')) {
+          hideModal();
+      }
+  });
+  // ---- Modal Logic END ----
+
   // ---- robust loader for mnemonic.json ----
   async function loadData(){
     try {
@@ -474,7 +594,7 @@
       countEl.textContent = "0 / 0";
 
       DATA = [{
-        mnemonic_verse: "Fallback item — your mnemonic.json failed to load.",
+        mnemonic_verse: "Fallback item — Something failed to load.",
         description: "Check DevTools → Network for mnemonic.json status and make sure the JSON has no trailing commas.",
         source: "Local fallback",
         source_url: null,
@@ -486,7 +606,6 @@
   }
   loadData();
 </script>
-
 
 </body>
 </html>
