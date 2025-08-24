@@ -182,9 +182,6 @@
       left: 20px;
       z-index: 1000;
       cursor: pointer;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
       border: 1px solid var(--line);
       background: rgba(255, 255, 255, 0.6);
       backdrop-filter: blur(6px);
@@ -196,6 +193,8 @@
       justify-content: center;
       line-height: 1;
       color: #333;
+      border-radius: 20px;
+      padding: 8px 16px;
     }
     #about-btn:hover {
       box-shadow: var(--shadow-hover);
@@ -355,7 +354,7 @@
 </head>
 <body>
 
-  <button id="about-btn" title="What is this?">?</button>
+  <button id="about-btn" title="What is this?">What is this</button>
 
   <audio id="background-audio" autoplay loop>
     <source src="aphextwin.mp3" type="audio/mpeg">
