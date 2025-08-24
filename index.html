@@ -582,7 +582,7 @@
       if (!Array.isArray(parsed)) throw new Error('JSON root is not an array');
 
       DATA = parsed;
-      idx = 0;
+      idx = Math.floor(Math.random() * DATA.length); 
       render(idx);
     } catch (err) {
       console.error('mnemonic.json load failed:', err);
